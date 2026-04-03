@@ -21,7 +21,7 @@ services:
   api:
     build:
       context: .                               
-      dockerfile: ErrorLogAnalyzerApi/Dockerfile
+      dockerfile: ErrorAnalyserApi/Dockerfile
     container_name: error_log_analyzer_api
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
@@ -39,7 +39,7 @@ services:
       - "5001:8081"   # Map host:container for HTTPS (if your app supports it)   
         
     volumes:
-      - ./ErrorLogAnalyzerApi/logs:/app/logs   
+      - ./ErrorAnalyserApi/logs:/app/logs   
 
   web:    
     build:
