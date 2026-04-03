@@ -1,0 +1,6 @@
+@ErrorAnalyserApi_HostAddress = http://localhost:5114
+
+GET {{ErrorAnalyserApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

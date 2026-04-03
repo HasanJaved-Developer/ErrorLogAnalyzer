@@ -1,0 +1,183 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Header ── */
+header {
+    border-bottom: 1px solid #1e2533;
+    padding: 1rem 2rem;
+}
+
+.brand {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #7c8cf8;
+    letter-spacing: 0.02em;
+}
+
+/* ── Main ── */
+main {
+    flex: 1;
+    max-width: 780px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+}
+
+/* ── Hero ── */
+.hero {
+    margin-bottom: 2.5rem;
+}
+
+.hero h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+/* ── Analyzer form ── */
+.analyzer {
+    margin-bottom: 3rem;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.field label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #cbd5e1;
+}
+
+.field textarea {
+    background: #1a1f2e;
+    border: 1px solid #2d3748;
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    padding: 0.75rem 1rem;
+    resize: vertical;
+    width: 100%;
+    transition: border-color 0.15s;
+}
+
+.field textarea:focus {
+    outline: none;
+    border-color: #7c8cf8;
+}
+
+.validation-error {
+    color: #f87171;
+    font-size: 0.8rem;
+}
+
+.btn-analyze {
+    background: #7c8cf8;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.65rem 1.75rem;
+    transition: background 0.15s;
+}
+
+.btn-analyze:hover { background: #6470e4; }
+
+/* ── Result ── */
+.result {
+    margin-top: 1.5rem;
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+}
+
+.result.error {
+    background: #2d1515;
+    border: 1px solid #7f1d1d;
+    color: #fca5a5;
+}
+
+.result.answer {
+    background: #0f2027;
+    border: 1px solid #1e3a4a;
+}
+
+.result.answer h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #7dd3fc;
+    margin-bottom: 0.75rem;
+}
+
+.result.answer p {
+    color: #cbd5e1;
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+.disclaimer {
+    margin-top: 0.75rem;
+    font-size: 0.78rem;
+    color: #64748b !important;
+    font-style: italic;
+}
+
+/* ── Example questions ── */
+.example-questions h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.example-questions ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.example-questions li {
+    color: #64748b;
+    font-size: 0.875rem;
+    padding-left: 1rem;
+    position: relative;
+}
+
+.example-questions li::before {
+    content: "–";
+    position: absolute;
+    left: 0;
+    color: #334155;
+}
+
+/* ── Footer ── */
+footer {
+    border-top: 1px solid #1e2533;
+    padding: 1rem 2rem;
+    text-align: center;
+    font-size: 0.78rem;
+    color: #475569;
+}

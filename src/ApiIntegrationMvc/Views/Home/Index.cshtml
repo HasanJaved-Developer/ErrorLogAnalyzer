@@ -1,0 +1,47 @@
+@model AnalyzeViewModel
+@{
+    ViewData["Title"] = "Error Log Analyzer";
+}
+
+<section class="hero">
+    <h1>Error Log Analyzer</h1>
+    <p class="subtitle">Ask a plain-English question about a production error. The agent queries your logs, deployment history, and source changes to explain the root cause.</p>
+</section>
+
+<section class="analyzer">
+    <form asp-action="Analyze" method="post">
+        <div class="field">
+            <label asp-for="Question">Your question</label>
+            <textarea asp-for="Question"
+                      rows="3"
+                      placeholder="e.g. What caused the NullReferenceException after yesterday's deployment?"></textarea>
+            <span asp-validation-for="Question" class="validation-error"></span>
+        </div>
+        <button type="submit" class="btn-analyze">Analyze</button>
+    </form>
+
+    @if (Model.Error is not null)
+    {
+        <div class="result error">
+            <strong>Error:</strong> @Model.Error
+        </div>
+    }
+
+    @if (Model.HasResult)
+    {
+        <div class="result answer">
+            <h2>Root Cause Hypothesis</h2>
+            <p>@Model.Answer</p>
+            <p class="disclaimer">This is an AI-generated hypothesis. Verify before acting on it.</p>
+        </div>
+    }
+</section>
+
+<section class="example-questions">
+    <h3>Example questions</h3>
+    <ul>
+        <li>What caused the timeout error after yesterday's deployment?</li>
+        <li>Is this NullReferenceException a recurring issue?</li>
+        <li>Summarize all errors in production this week.</li>
+    </ul>
+</section>

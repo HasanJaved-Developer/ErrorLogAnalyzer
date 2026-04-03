@@ -1,0 +1,53 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "ErrorAnalyserApi",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build: ErrorAnalyserApi",
+      "program": "${workspaceFolder}/src/ErrorAnalyserApi/bin/Debug/net9.0/ErrorAnalyserApi.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/ErrorAnalyserApi",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:7001;http://localhost:5001"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      }
+    },
+    {
+      "name": "ApiIntegrationMvc",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build: ApiIntegrationMvc",
+      "program": "${workspaceFolder}/src/ApiIntegrationMvc/bin/Debug/net9.0/ApiIntegrationMvc.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/ApiIntegrationMvc",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:7000;http://localhost:5000"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "All Projects",
+      "configurations": ["ErrorAnalyserApi", "ApiIntegrationMvc"],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "",
+        "order": 1
+      }
+    }
+  ]
+}
