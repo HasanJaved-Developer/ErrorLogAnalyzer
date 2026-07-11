@@ -25,10 +25,21 @@ public class HomeController : Controller
             return View("Index", model);
         }
 
+        if (model.Provider == "Groq" && string.IsNullOrWhiteSpace(model.ApiKey))
+        {
+            ModelState.AddModelError(nameof(model.ApiKey), "An API key is required for Groq.");
+            return View("Index", model);
+        }
+
         try
         {
             var client = _httpClientFactory.CreateClient("AnalyzerApi");
-            var response = await client.PostAsJsonAsync("/api/analyze", new { question = model.Question });
+            var response = await client.PostAsJsonAsync("/api/analyze", new
+            {
+                question = model.Question,
+                provider = model.Provider,
+                apiKey   = model.ApiKey
+            });
 
             if (response.IsSuccessStatusCode)
             {
