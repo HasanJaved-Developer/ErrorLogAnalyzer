@@ -167,6 +167,13 @@ error-log-analyzer/
 # Everything spins up via Docker
 docker-compose up -d
 
+On first startup the API will:
+1. Create the SQL Server database and apply EF migrations
+2. Seed `ErrorLog` and `DeploymentLog` with realistic demo data
+3. Index the seed source files into Qdrant via the RAG pipeline
+
+Expected answer time: **10–25 seconds** with a GPU, **60–180 seconds** CPU-only.
+
 ## 🌐 Running Services
 
 Once `docker compose up` completes, the following services will be available:
