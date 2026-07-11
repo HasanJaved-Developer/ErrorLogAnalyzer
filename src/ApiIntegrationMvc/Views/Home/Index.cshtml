@@ -11,6 +11,24 @@
 <section class="analyzer">
     <form asp-action="Analyze" method="post">
         <div class="field">
+            <label>LLM Provider</label>
+            <div class="provider-options">
+                <label>
+                    <input type="radio" asp-for="Provider" value="SelfHosted" id="provider-selfhosted" />
+                    Self-hosted (Ollama)
+                </label>
+                <label>
+                    <input type="radio" asp-for="Provider" value="Groq" id="provider-groq" />
+                    Groq API
+                </label>
+            </div>
+        </div>
+        <div class="field" id="api-key-field" style="display:none">
+            <label asp-for="ApiKey">Groq API Key</label>
+            <input asp-for="ApiKey" type="password" placeholder="gsk_..." autocomplete="off" />
+            <span asp-validation-for="ApiKey" class="validation-error"></span>
+        </div>
+        <div class="field">
             <label asp-for="Question">Your question</label>
             <textarea asp-for="Question"
                       rows="3"
@@ -19,6 +37,18 @@
         </div>
         <button type="submit" class="btn-analyze">Analyze</button>
     </form>
+
+    <script>
+        (function () {
+            var radios = document.querySelectorAll('input[name="Provider"]');
+            var keyField = document.getElementById('api-key-field');
+            function toggle() {
+                keyField.style.display = document.getElementById('provider-groq').checked ? '' : 'none';
+            }
+            radios.forEach(function (r) { r.addEventListener('change', toggle); });
+            toggle();
+        })();
+    </script>
 
     @if (Model.Error is not null)
     {
@@ -40,8 +70,8 @@
 <section class="example-questions">
     <h3>Example questions</h3>
     <ul>
-        <li>What caused the timeout error after yesterday's deployment?</li>
-        <li>Is this NullReferenceException a recurring issue?</li>
-        <li>Summarize all errors in production this week.</li>
+        <li>Summarize all production errors from the last 3 days.</li>
+        <li>Why is PaymentService.ChargeAsync timing out?</li>
+        <li>What changed in production in the last few days that might have caused new errors?</li>
     </ul>
 </section>

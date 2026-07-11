@@ -1,0 +1,6 @@
+flowchart TD
+      A[MSSQL: DeploymentLogs table<br/>distinct changed code file paths] --> B{Already indexed<br/>in Qdrant?}
+      B -->|Yes| Z[Skip — index is idempotent]
+      B -->|No| C[Chunk each file<br/>500 chars, 50 char overlap]
+      C --> D[Embed each chunk<br/>Ollama · nomic-embed-text · 768-dim]
+      D --> E[(Qdrant<br/>cosine similarity search)]

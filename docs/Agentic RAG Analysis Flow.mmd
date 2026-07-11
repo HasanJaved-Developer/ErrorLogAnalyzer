@@ -1,0 +1,11 @@
+ flowchart TD
+      P[User prompt] --> V[RAG: embed prompt into vector<br/>search Qdrant for relevant code]
+      V --> R[Agent reasoning + tool calling loop]
+
+      R --> B[Error Logs<br/>what broke, when]
+      R --> A[Deployments<br/>what changed, when]
+      B --> R
+      A --> R
+
+      R -->|more tool calls needed| R
+      R -->|done reasoning| D[Root cause:<br/>failing file, line, likely fix]

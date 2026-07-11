@@ -1,0 +1,7 @@
+version: 2
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/src/ApiIntegrationMvc"   # path to your .csproj or solution
+    schedule:
+      interval: "monthly"   # or weekly
+    open-pull-requests-limit: 5

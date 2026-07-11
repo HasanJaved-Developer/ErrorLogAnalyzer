@@ -18,15 +18,25 @@ services:
       - ollama_data:/root/.ollama
     restart: unless-stopped
     
+  ollama-init:                                                                   
+    image: curlimages/curl:latest
+    container_name: ollama_init
+    depends_on:
+      ollama:
+        condition: service_started
+    restart: "no"
+    entrypoint: >
+      sh -c "
+        until curl -sf http://ollama:11434/api/tags; do echo 'Waiting for Ollama...'; sleep 2; done &&
+        curl -s http://ollama:11434/api/pull -d '{\"name\":\"qwen2.5:3b\"}' &&
+        curl -s http://ollama:11434/api/pull -d '{\"name\":\"nomic-embed-text\"}'
+      "
+  
   api:
     build:
       context: .                               
       dockerfile: ErrorAnalyserApi/Dockerfile
     container_name: error_log_analyzer_api
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - Qdrant__Endpoint=http://qdrant:6333
-      - Ollama__BaseUrl=http://ollama:11434
     depends_on:
       db:
         condition: service_healthy
@@ -34,6 +44,8 @@ services:
         condition: service_started
       ollama:
         condition: service_started
+      ollama-init:
+        condition: service_completed_successfully
     ports:
       - "5000:8080"   # Map host:container for HTTP
       - "5001:8081"   # Map host:container for HTTPS (if your app supports it)   
@@ -46,12 +58,6 @@ services:
       context: .
       dockerfile: ApiIntegrationMvc/Dockerfile
     container_name: api_integration_web
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:8080
-      # Point the web app to APIs by service name (DNS provided by Compose)
-      - Services__ErrorAnalyzer__BaseUrl=http://api:8080
-      
     ports:
       - "7000:8080"  # browse http://localhost:7000
     depends_on:
