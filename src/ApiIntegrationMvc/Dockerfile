@@ -12,7 +12,7 @@ RUN dotnet publish ApiIntegrationMvc/ApiIntegrationMvc.csproj -c Release -o /app
 
 # ------------ Runtime stage ------------
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
-WORKDIR /src
+WORKDIR /app
 
 # Install required libraries for Microsoft.Data.SqlClient on Linux
 RUN apt-get update && apt-get install -y \
