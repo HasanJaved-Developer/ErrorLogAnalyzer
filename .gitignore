@@ -367,3 +367,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Claude configuration
+.claude/
+
+# OpenSpec files
+openspec/
