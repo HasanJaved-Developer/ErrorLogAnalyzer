@@ -3,16 +3,16 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy ErrorAnalyserApi + McpServer (spawned as a child process by the API) + the SDKs they depend on
-COPY ErrorAnalyserApi/ErrorAnalyserApi.csproj ErrorAnalyserApi/
-COPY McpServer/McpServer.csproj McpServer/
-COPY DataAccess/DataAccess.csproj DataAccess/
+COPY src/ErrorAnalyserApi/ErrorAnalyserApi.csproj ErrorAnalyserApi/
+COPY src/McpServer/McpServer.csproj McpServer/
+COPY src/DataAccess/DataAccess.csproj DataAccess/
 
 RUN dotnet restore ErrorAnalyserApi/ErrorAnalyserApi.csproj
 RUN dotnet restore McpServer/McpServer.csproj
 
 COPY . .
-RUN dotnet publish ErrorAnalyserApi/ErrorAnalyserApi.csproj -c Release -o /app
-RUN dotnet publish McpServer/McpServer.csproj -c Release -o /app/mcpserver
+RUN dotnet publish src/ErrorAnalyserApi/ErrorAnalyserApi.csproj -c Release -o /app
+RUN dotnet publish src/McpServer/McpServer.csproj -c Release -o /app/mcpserver
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0

@@ -3,12 +3,12 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy ApiIntegrationMvc + the SDKs it depends on
-COPY ApiIntegrationMvc/ApiIntegrationMvc.csproj ApiIntegrationMvc/
+COPY src/ApiIntegrationMvc/ApiIntegrationMvc.csproj ApiIntegrationMvc/
 
 RUN dotnet restore ApiIntegrationMvc/ApiIntegrationMvc.csproj
 
 COPY . .
-RUN dotnet publish ApiIntegrationMvc/ApiIntegrationMvc.csproj -c Release -o /app
+RUN dotnet publish src/ApiIntegrationMvc/ApiIntegrationMvc.csproj -c Release -o /app
 
 # ------------ Runtime stage ------------
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
