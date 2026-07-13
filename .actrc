@@ -1,0 +1,13 @@
+# Map runner labels to Docker images maintained for act
+-P ubuntu-latest=catthehacker/ubuntu:act-22.04
+-P ubuntu-22.04=catthehacker/ubuntu:act-22.04
+-P ubuntu-20.04=catthehacker/ubuntu:act-20.04
+
+# Make Docker available for Buildx & “services”
+--container-options "--privileged"
+
+# Good QoL flags
+--bind
+# --reuse
+# If you ever want to use --reuse again, keep in mind that after changing repository structure, workflow files, or mount settings, you should remove the old containers first:
+# act --rm

@@ -1,0 +1,212 @@
+name: docker-compose-ci
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'   # v1.2.3
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+concurrency:
+  group: docker-compose-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REPO_SLUG: errorlog-analyzer
+  PLATFORMS: linux/amd64,linux/arm64
+  DOCKERHUB_NAMESPACE: "hasanjaveddeveloper"        # optional mirroring
+  PUSH_IMAGES: "true"                                # always push in GitHub CI
+  ALLOW_LOCAL_PUSH: "true"                           # allows push when not running under act
+
+jobs:
+  images:
+    name: Build and Push Images (GHCR)
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      startsWith(github.ref, 'refs/heads/main') ||
+      startsWith(github.ref, 'refs/tags/v')
+    steps:
+      # ---------- Source checkout ----------
+      - name: Checkout (act)
+        if: ${{ env.ACT }}
+        run: echo "Repo mounted by act. Skipping actions/checkout."
+
+      - name: Checkout
+        if: ${{ !env.ACT }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # ---------- Tooling ----------
+      - name: Set up QEMU
+        if: ${{ !env.ACT }}
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        if: ${{ !env.ACT }}
+        uses: docker/setup-buildx-action@v3
+
+      - name: Bootstrap buildx (act)
+        if: ${{ env.ACT }}
+        run: |
+          docker buildx create --use --driver docker --name actdocker || true
+          docker buildx inspect --bootstrap
+
+      - name: Force single-arch for act and non-tag builds
+        run: |
+          if [ -n "${ACT:-}" ]; then echo "PLATFORMS=linux/amd64" >> $GITHUB_ENV; fi
+          if [[ "${GITHUB_REF}" != refs/tags/v* ]]; then echo "PLATFORMS=linux/amd64" >> $GITHUB_ENV; fi
+        shell: bash
+
+      - name: Compute tag override lines
+        id: tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
+          REPO_SLUG="${REPO_SLUG}"
+          REF="${GITHUB_REF}"
+          HUB_NS="${DOCKERHUB_NAMESPACE:-}"
+
+          add_lines() { # svc, tags...
+            local svc="$1"; shift
+            local -a tags=( "$@" )
+            for t in "${tags[@]}"; do printf '%s.tags=%s\n' "$svc" "$t"; done
+          }
+
+          # GHCR base tags
+          is_master=false
+          is_tag=false
+
+          if [[ "$REF" == "refs/heads/main" ]]; then
+             is_master=true
+          elif [[ "$REF" == refs/tags/v* ]]; then
+             is_tag=true
+          fi
+
+          # Non-master, non-tag branches -> edge
+          if ! $is_master && ! $is_tag; then            
+            api_tags+=(  "ghcr.io/${OWNER_LC}/${REPO_SLUG}/api:edge" )
+            web_tags+=(  "ghcr.io/${OWNER_LC}/${REPO_SLUG}/web:edge" )
+          fi
+
+          # Master branch -> latest
+          if $is_master; then            
+            api_tags+=(  "ghcr.io/${OWNER_LC}/${REPO_SLUG}/api:latest" )
+            web_tags+=(  "ghcr.io/${OWNER_LC}/${REPO_SLUG}/web:latest" )
+          fi
+
+          # Release tags -> vX.Y.Z and X.Y (optionally also latest if you want)
+          if $is_tag; then
+            ver="${REF#refs/tags/}"     # vX.Y.Z
+            short="${ver#v}"            # X.Y.Z
+            minor="${short%.*}"         # X.Y
+                        
+            api_tags+=(  "ghcr.io/${OWNER_LC}/${REPO_SLUG}/api:${ver}" )
+            web_tags+=(  "ghcr.io/${OWNER_LC}/${REPO_SLUG}/web:${ver}" )
+            
+          fi
+
+          # Docker Hub mirrors (optional, only if namespace present)
+          if [[ -n "$HUB_NS" ]]; then            
+            hub_api=(  "${api_tags[@]/#ghcr.io\/${OWNER_LC}\/${REPO_SLUG}\/api:/docker.io/${HUB_NS}/${REPO_SLUG}-api:}" )
+            hub_web=(  "${web_tags[@]/#ghcr.io\/${OWNER_LC}\/${REPO_SLUG}\/web:/docker.io/${HUB_NS}/${REPO_SLUG}-web:}" )            
+            api_tags+=(  "${hub_api[@]}" )
+            web_tags+=(  "${hub_web[@]}" )
+          fi
+
+          {            
+            echo "api_set<<EOF";  add_lines api     "${api_tags[@]}";  echo "EOF"
+            echo "web_set<<EOF";  add_lines web     "${web_tags[@]}";  echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # ---------- GHCR login ----------
+      - name: Login to GHCR (act)
+        if: ${{ env.ACT }}
+        shell: bash
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.repository_owner }}" --password-stdin
+
+      - name: Login to GHCR
+        if: ${{ !env.ACT }}
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ACT: login to Docker Hub via CLI
+      - name: Login to Docker Hub (act)        
+        shell: bash
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      # GitHub CI: login action
+      - name: Login to Docker Hub        
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Debug mounts
+        if: ${{ env.ACT }}
+        run: |
+          cat /proc/self/mountinfo | grep ErrorLogAnalyzer || true
+          cat /proc/self/mountinfo | grep workspace || true
+
+      - name: Debug workspace
+        if: ${{ env.ACT }}
+        run: |
+          set -x
+          pwd
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+
+          echo "===== current ====="
+          ls -la
+    
+          echo "===== workspace ====="
+          ls -la "$GITHUB_WORKSPACE"
+
+          echo "===== mount ====="
+          mount | grep /mnt || true
+
+          echo "===== stat ====="
+          stat "$GITHUB_WORKSPACE" || true
+
+          echo "===== docker-bake ====="
+          ls -l "$GITHUB_WORKSPACE/docker-bake.hcl" || true
+    
+      # ---------- ACT: CLI bake (avoids dial-stdio) ----------
+      - name: Bake (ACT)
+        if: ${{ env.ACT }}
+        shell: bash
+        env:
+          DO_PUSH: ${{ env.PUSH_IMAGES == 'true' && env.ALLOW_LOCAL_PUSH == 'true' && 'true' || 'false' }}
+        run: |
+          set -euo pipefail
+          COMMON_SET=(
+            "--set" "*.platform=${PLATFORMS}"
+            "--set" "*.labels.org.opencontainers.image.revision=${GITHUB_SHA}"
+          )          
+          while IFS= read -r l; do COMMON_SET+=( "--set" "$l" ); done <<< "${{ steps.tags.outputs.api_set }}"
+          while IFS= read -r l; do COMMON_SET+=( "--set" "$l" ); done <<< "${{ steps.tags.outputs.web_set }}"
+
+          if [ "$DO_PUSH" = "true" ]; then
+            docker buildx bake -f ./docker-bake.hcl "${COMMON_SET[@]}" --push
+          else
+            docker buildx bake -f ./docker-bake.hcl "${COMMON_SET[@]}" --load
+          fi
+
+      # ---------- GitHub CI: bake action ----------
+      - name: Bake and Push (GitHub)
+        if: ${{ !env.ACT }}
+        uses: docker/bake-action@v5
+        with:
+          files: ./docker-bake.hcl
+          push: ${{ env.PUSH_IMAGES == 'true' }}
+          set: |
+            *.platform=${{ env.PLATFORMS }}
+            *.labels.org.opencontainers.image.revision=${{ github.sha }}           
+            ${{ steps.tags.outputs.api_set }}
+            ${{ steps.tags.outputs.web_set }}
