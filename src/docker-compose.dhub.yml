@@ -1,0 +1,88 @@
+name: errorlog-analyzer-stack-dhub
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.9.2
+    container_name: qdrant
+    ports:
+      - "6333:6333"   # REST API + Web UI
+      - "6334:6334"   # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"   # OpenAI-compatible REST API
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    
+  ollama-init:                                                                   
+    image: curlimages/curl:latest
+    container_name: ollama_init
+    depends_on:
+      ollama:
+        condition: service_started
+    restart: "no"
+    entrypoint: >
+      sh -c "
+        until curl -sf http://ollama:11434/api/tags; do echo 'Waiting for Ollama...'; sleep 2; done &&
+        curl -s http://ollama:11434/api/pull -d '{\"name\":\"qwen2.5:3b\"}' &&
+        curl -s http://ollama:11434/api/pull -d '{\"name\":\"nomic-embed-text\"}'
+      "
+      
+  api:
+    # ── Docker Hub image
+    image: docker.io/hasanjaveddeveloper/errorlog-analyzer-api:v1.0.1
+    container_name: error_log_analyzer_api
+    depends_on:
+      db:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+      ollama:
+        condition: service_started
+      ollama-init:
+        condition: service_completed_successfully
+    ports:
+      - "5000:8080"   # Map host:container for HTTP
+      - "5001:8081"   # Map host:container for HTTPS (if your app supports it)   
+        
+    volumes:
+      - ./ErrorAnalyserApi/logs:/app/logs 
+
+  web:    
+    build:
+      context: .
+      dockerfile: ApiIntegrationMvc/Dockerfile
+    container_name: api_integration_web
+    ports:
+      - "7000:8080"  # browse http://localhost:7000
+    depends_on:
+      api:
+        condition: service_started
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: error_analyzer_db
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Bisp@123
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost,1433 -U sa -P 'Bisp@123' -C -Q \"SELECT 1\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - sql_data:/var/opt/mssql
+ 
+volumes:
+  sql_data:
+  qdrant_data:
+  ollama_data:
