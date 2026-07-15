@@ -36,7 +36,7 @@ services:
       
   api:
     # ── Docker Hub image
-    image: docker.io/hasanjaveddeveloper/errorlog-analyzer-api:v1.0.1
+    image: docker.io/hasanjaveddeveloper/errorlog-analyzer-api:v1.0.0
     container_name: error_log_analyzer_api
     depends_on:
       db:
@@ -55,9 +55,7 @@ services:
       - ./ErrorAnalyserApi/logs:/app/logs 
 
   web:    
-    build:
-      context: .
-      dockerfile: ApiIntegrationMvc/Dockerfile
+    image: docker.io/hasanjaveddeveloper/errorlog-analyzer-web:v1.0.0
     container_name: api_integration_web
     ports:
       - "7000:8080"  # browse http://localhost:7000
